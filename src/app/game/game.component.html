@@ -1,0 +1,418 @@
+<!-- Ảnh header Excel cố định (thay cho Ribbon/Toolbar) -->
+<img src="excel-header.png" alt="Excel Header" class="excel-header-image" />
+
+<!-- Formula Bar -->
+<div class="formula-bar" [class.your-turn]="isMyTurn && mode === 'classic'">
+  <div class="cell-reference">{{ cellRef }}</div>
+  <div class="fx-label">fx</div>
+  <input
+    type="text"
+    #wordInputEl
+    class="input-area"
+    [(ngModel)]="currentInput"
+    (keydown.enter)="submitWord()"
+    [placeholder]="inputPlaceholder"
+    [disabled]="!canInput"
+    autocomplete="off"
+  />
+</div>
+
+<!-- Sheet Tabs -->
+<!-- <div class="sheet-tabs">
+  <div class="sheet-tab inactive">Sheet2</div>
+  <div class="sheet-tab inactive">Sheet3</div>
+  <div class="sheet-tab active">Sheet1</div>
+</div> -->
+
+<!-- Room Info Bar -->
+<div class="room-info" [class.hidden]="!inRoom">
+  <span>Room: <span class="room-code">{{ roomCode }}</span></span>
+  <span class="room-status">{{ roomStatus }}</span>
+
+    <div class="scoreboard-chips" *ngIf="scoreboard.length">
+    <span class="score-chip-wrap" *ngFor="let p of scoreboard; let i = index">
+      <span
+        class="score-chip"
+        [class.leader]="i === 0"
+        [class.eliminated]="mode === 'classic' && p.alive === false"
+        [class.current-turn]="mode === 'classic' && gameStarted && !waitingForReady && p.id === currentTurnPlayerId"
+      >{{ p.name }}: {{ p.score }}</span>
+      <span
+        class="wrong-flash-inline"
+        *ngIf="wrongFlash && wrongFlash.playerId === p.id && mode === 'classic'"
+      >"{{ wrongFlash.phrase }}"</span>
+    </span>
+  </div>
+
+  <span class="turn-indicator">{{ turnIndicatorText }}</span>
+
+  @if (!gameStarted && playerCount >= 2) {
+    <button class="btn btn-primary"
+            (click)="startGame()"
+            style="margin-left: 12px; padding: 2px 12px; font-size: 9pt;">
+      ▶ Bắt đầu
+    </button>
+  }
+
+  @if (!gameStarted && playerCount < 2) {
+    <span style="margin-left: 12px; font-size: 9pt; color: #999;">
+      ⏳ Cần ít nhất 2 người...
+    </span>
+  }
+</div>
+
+<!-- Main Grid -->
+<div class="main-container">
+  <div class="grid-container">
+    <table class="word-grid">
+      <thead>
+        <tr>
+          <th class="row-head"></th>
+          <th class="col-a">STT</th>
+          <th class="col-b">Từ</th>
+          <th class="col-c">Người chơi</th>
+          <th class="col-d">Âm cuối</th>
+          <th class="col-empty" *ngFor="let c of extraCols">{{ c }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let i of gridRowIndexes">
+          <td class="row-head">{{ i + 1 }}</td>
+
+          <ng-container *ngIf="mode === 'blitz'; else classicRow">
+            <td class="col-a">{{ blitzFakeRows[i]?.stt }}</td>
+            <td class="col-b word-cell">{{ blitzFakeRows[i]?.content }}</td>
+            <td class="col-c player-cell">{{ blitzFakeRows[i]?.staff }}</td>
+            <td class="col-d">{{ blitzFakeRows[i]?.note }}</td>
+          </ng-container>
+
+          <ng-template #classicRow>
+            <ng-container *ngIf="chain[i]; else emptyDataRow">
+              <td class="col-a">{{ i + 1 }}</td>
+              <td class="col-b word-cell">{{ chain[i].phrase }}</td>
+              <td class="col-c player-cell">{{ chain[i].by }}</td>
+              <td class="col-d">{{ getLastSyllable(chain[i].phrase) }}</td>
+            </ng-container>
+            <ng-template #emptyDataRow>
+              <td class="col-a"></td>
+              <td class="col-b"></td>
+              <td class="col-c"></td>
+              <td class="col-d"></td>
+            </ng-template>
+          </ng-template>
+
+          <td class="col-empty" *ngFor="let c of extraCols"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <div class="status-left">
+    <span>{{ gameStarted ? 'Playing' : 'Ready' }}</span>
+    <span>{{ playerCount }} Players</span>
+  </div>
+  <div class="status-right">
+    @if (timeLeft < 20 && gameStarted) {
+      <div class="saving-indicator">
+        <span>{{ timeLeft }}s</span>
+        <div class="saving-bar">
+          <div class="saving-fill" [style.width.%]="(timeLeft / 20) * 100"></div>
+        </div>
+      </div>
+    }
+    <span>100%</span>
+  </div>
+</div>
+
+<!-- Login / Room Join Overlay -->
+<div class="overlay" [class.hidden]="inRoom">
+  <div class="login-wrapper">
+    <div class="login-panel">
+    <h2>Workbook1 - Excel</h2>
+    <div class="subtitle">Nhập thông tin để tham gia phòng làm việc:</div>
+    <div class="form-group">
+      <label>Tên người dùng</label>
+      <input type="text" [(ngModel)]="playerName" placeholder="Nhập tên của bạn..." maxlength="20" />
+    </div>
+    <div class="form-group">
+      <label>Mã phòng (tùy chọn)</label>
+      <input type="text" [(ngModel)]="roomCodeInput" placeholder="Để trống để tạo phòng mới" />
+    </div>
+    <div class="form-group">
+      <label>Chế độ chơi</label>
+      <select [(ngModel)]="mode" style="width: 100%; padding: 6px 10px; border: 1px solid #c0c0c0; border-radius: 2px; font-size: 10pt;">
+        <option value="classic">Classic - Nối từ luân phiên</option>
+        <option value="blitz">Blitz - Tốc độ nhiều vòng</option>
+      </select>
+    </div>
+    <div class="form-group" *ngIf="mode === 'classic'" >
+      <label>Số ván thắng để chiến thắng chung cuộc</label>
+      <input
+        type="number"
+        [(ngModel)]="targetWinsInput"
+        min="1"
+        max="50"
+        placeholder="5"
+      />
+    </div>
+    <div class="form-group" *ngIf="mode === 'blitz'">
+      <label>Số lượt chơi (Blitz)</label>
+      <input
+        type="number"
+        [(ngModel)]="blitzRoundsInput"
+        min="1"
+        max="50"
+        placeholder="10"
+      />
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" (click)="joinOrCreateRoom()">
+        Tham gia / Tạo phòng
+      </button>
+    </div>
+    </div>
+    <div class="room-list-panel">
+      <h3>Phòng đang mở</h3>
+      <div class="room-list" *ngIf="openRooms.length; else noRooms">
+        <div class="room-list-item" *ngFor="let r of openRooms">
+          <div class="room-list-info">
+            <span class="room-list-code">{{ r.code }}</span>
+            <span class="room-list-mode">{{ r.mode === 'blitz' ? '⚡ Blitz' : '🔗 Classic' }}</span>
+            <span class="room-list-status" [class.playing]="r.status !== 'waiting'">
+              {{ roomStatusLabel(r) }}
+            </span>
+            <span class="room-list-count">{{ r.playerCount }}/10</span>
+          </div>
+          <button class="btn-join-mini" (click)="quickJoinRoom(r.code)" [disabled]="r.playerCount >= 10">
+            Vào
+          </button>
+        </div>
+      </div>
+      <ng-template #noRooms>
+        <p class="room-list-empty">Chưa có phòng nào đang mở. Hãy tạo phòng mới!</p>
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+<!-- Winner Overlay -->
+<div class="overlay winner-overlay" [class.hidden]="!gameOver">
+  <div class="winner-panel">
+    <h2>🏆 Chiến thắng chung cuộc!</h2>
+    <div class="winner-name">{{ winnerName }}</div>
+    <p>🏆 Bảng xếp hạng:</p>
+    <div style="margin: 12px 0; text-align: left; display: inline-block;">
+      @for (p of blitzLeaderboard; track p.id) {
+        <div style="font-size: 12pt; margin: 4px 0;">
+          {{ $index + 1 }}. {{ p.name }} — {{ p.score }} điểm
+        </div>
+      }
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" (click)="playAgain()">🔁 Chơi tiếp trong phòng</button>
+      <button class="btn btn-secondary" (click)="newGame()">Rời phòng</button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="waitingForReady" class="ready-overlay">
+  <div class="ready-box">
+    <h2>🎉 {{ roundMessage }}</h2>
+
+    <div class="leaderboard">
+      <h3>Bảng điểm</h3>
+      <table>
+        <tr *ngFor="let p of roundLeaderboard; let i = index">
+          <td>{{ i + 1 }}.</td>
+          <td>{{ p.name }}</td>
+          <td>{{ p.score }} điểm</td>
+        </tr>
+      </table>
+    </div>
+
+    <p class="ready-status">
+      Sẵn sàng: {{ readyCount }} / {{ totalPlayers }}
+    </p>
+
+    <button *ngIf="!isReady" (click)="onReadyClick()" class="btn-ready">
+      ✅ Sẵn sàng
+    </button>
+
+    <button *ngIf="isReady" (click)="onNotReadyClick()" class="btn-not-ready">
+      ❌ Hủy
+    </button>
+  </div>
+</div>
+
+<!-- Blitz Leaderboard Overlay -->
+<div *ngIf="showBlitzLeaderboard && mode === 'blitz' && !gameOver && !waitingForReady" class="blitz-leaderboard-overlay">
+  <div class="blitz-leaderboard-box">
+    <h2>⚡ Bảng xếp hạng — Lượt {{ blitzRound }}/{{ totalBlitzRounds }}</h2>
+    <p class="sample-answer" *ngIf="blitzSampleAnswer">
+      Đáp án gợi ý: <b>{{ blitzSampleAnswer }}</b>
+    </p>
+    <table class="blitz-leaderboard-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Người chơi</th>
+          <th>Điểm</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of blitzLeaderboard; let i = index" [class.first-place]="i === 0">
+          <td class="rank">{{ i + 1 }}</td>
+          <td class="player-name">{{ p.name }}</td>
+          <td class="player-score">{{ p.score }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="next-round-hint" *ngIf="nextRoundCountdown > 0">
+      ⏳ Lượt tiếp theo bắt đầu sau {{ nextRoundCountdown }} giây...
+    </p>
+</div>
+</div>
+
+<!-- Wrong-answer flash (chỉ chế độ Classic, hiện 1s cho cả phòng) -->
+<!-- <div class="wrong-flash-banner" *ngIf="wrongFlash && mode === 'classic'">
+  ❌ <b>{{ wrongFlash.playerName }}</b> nhập sai: "{{ wrongFlash.phrase }}"
+</div> -->
+
+<!-- Boss Key Overlay (fake spreadsheet, giống hệt trang chính) -->
+<div class="boss-overlay" [class.active]="bossMode">
+  <img src="excel-header.png" alt="Excel Header" class="excel-header-image" />
+
+  <!-- Formula Bar giả -->
+  <div class="formula-bar">
+    <div class="cell-reference">B3</div>
+    <div class="fx-label">fx</div>
+    <input
+      type="text"
+      class="input-area"
+      value="=SUM(B2:B31)"
+      readonly
+    />
+  </div>
+
+  <!-- Sheet Tabs -->
+  <!-- <div class="sheet-tabs">
+    <div class="sheet-tab inactive">Sheet2</div>
+    <div class="sheet-tab inactive">Sheet3</div>
+    <div class="sheet-tab active">Sheet1</div>
+  </div> -->
+
+  <!-- Grid giả (giống hệt cấu trúc lưới chính) -->
+  <div class="main-container">
+    <div class="grid-container" #gridContainerEl>
+      <table class="word-grid">
+        <thead>
+          <tr>
+            <th class="row-head"></th>
+            <th class="col-a">A</th>
+            <th class="col-b">B</th>
+            <th class="col-c">C</th>
+            <th class="col-d">D</th>
+            <th class="col-a">E</th>
+            <th class="col-empty" *ngFor="let c of bossExtraCols">{{ c }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-head">1</td>
+            <td class="col-a header-cell">Họ tên</td>
+            <td class="col-b header-cell">Số tiền</td>
+            <td class="col-c header-cell">Nội dung</td>
+            <td class="col-d header-cell">Phí</td>
+            <td class="col-a header-cell">Trạng thái</td>
+            <td class="col-empty" *ngFor="let c of bossExtraCols"></td>
+          </tr>
+          <tr *ngFor="let i of bossRowIndexes">
+            <td class="row-head">{{ i + 2 }}</td>
+
+            <ng-container *ngIf="bossData[i]; else emptyBossRow">
+              <td class="col-a">{{ bossData[i].a }}</td>
+              <td class="col-b num-cell">{{ bossData[i].b }}</td>
+              <td class="col-c">{{ bossData[i].c }}</td>
+              <td class="col-d num-cell">{{ bossData[i].d }}</td>
+              <td class="col-a">{{ bossData[i].e }}</td>
+            </ng-container>
+            <ng-template #emptyBossRow>
+              <td class="col-a"></td>
+              <td class="col-b"></td>
+              <td class="col-c"></td>
+              <td class="col-d"></td>
+              <td class="col-a"></td>
+            </ng-template>
+
+            <td class="col-empty" *ngFor="let c of bossExtraCols"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-left">
+      <span>Ready</span>
+    </div>
+    <div class="status-right">
+      <span>100%</span>
+    </div>
+  </div>
+</div>
+
+<!-- Chat / camo "Comments" pane -->
+<div class="chat-anchor" cdkDrag>
+  <div class="chat-preview-bubble" *ngIf="chatPreview && !chatOpen">
+    <b>{{ chatPreview.playerName }}:</b> {{ chatPreview.message }}
+  </div>
+
+  <div class="chat-panel" [class.open]="chatOpen">
+    <div class="chat-header" cdkDragHandle>
+      <span>Comments</span>
+      <span class="chat-close" (click)="toggleChat()">✕</span>
+    </div>
+    <div class="chat-messages" #chatMessagesEl>
+      <div class="chat-msg" *ngFor="let m of chatMessages" [class.own]="isMyMessage(m.playerId)">
+        <div class="chat-bubble">
+          <span class="chat-name" *ngIf="!isMyMessage(m.playerId)">{{ m.playerName }}</span>
+          <span class="chat-text">{{ m.message }}</span>
+        </div>
+      </div>
+      <div class="chat-empty" *ngIf="!chatMessages.length">Chưa có bình luận nào...</div>
+    </div>
+    <div class="chat-input-row">
+      <input
+        #chatInputEl
+        type="text"
+        [(ngModel)]="chatInput"
+        (keydown.enter)="sendChatMessage()"
+        placeholder="Nhập bình luận..."
+        maxlength="200"
+      />
+      <button (click)="sendChatMessage()">➤</button>
+    </div>
+  </div>
+
+  <button class="chat-toggle" (click)="toggleChat()" *ngIf="!chatOpen">
+    💬
+    <span class="chat-badge" *ngIf="unreadChat > 0">{{ unreadChat }}</span>
+  </button>
+</div>
+
+<div class="elimination-banner" *ngIf="eliminationMessage">
+  ⚠️ {{ eliminationMessage }}
+</div>
+
+<!-- Toast notification -->
+<div class="toast"
+     [class.show]="toastVisible"
+     [class.error]="toastType === 'error'"
+     [class.success]="toastType === 'success'">
+  {{ toastMessage }}
+</div>

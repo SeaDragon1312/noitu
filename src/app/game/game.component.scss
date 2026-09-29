@@ -1,0 +1,818 @@
+/* Excel Camouflage Styles - Google Sheets Theme */
+:host {
+  --excel-green: #217346;
+  --excel-green-light: #33a06f;
+  --excel-green-bg: #e8f5e9;
+  --excel-green-border: #1a5c38;
+  --ribbon-gray: #f3f2f1;
+  --ribbon-dark: #e1dfdd;
+  --ribbon-active: #d2e0f0;
+  --grid-border: #c0c0c0;
+  --grid-header: #f3f2f1;
+  --grid-header-border: #d1d1d1;
+  --cell-white: #ffffff;
+  --cell-hover: #e8f5e9;
+  --cell-active: #d4edda;
+  --cell-active-border: #28a745;
+  --status-bar: #217346;
+  --status-text: #ffffff;
+  --tab-active: #ffffff;
+  --tab-inactive: #f3f2f1;
+  --text-dark: #333333;
+  --text-muted: #666666;
+  --formula-bg: #f3f2f1;
+  --boss-red: #c0392b;
+
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Calibri', 'Segoe UI', sans-serif;
+  font-size: 11pt;
+  background: var(--cell-white);
+  
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+
+/* ===== ẢNH HEADER EXCEL CỐ ĐỊNH ===== */
+.excel-header-image {
+  width: 100%;
+  display: block;
+  flex-shrink: 0;
+  user-select: none;
+  pointer-events: none; /* để không cản click vào phần dưới nếu ảnh có vùng trong suốt */
+}
+
+/* ===== FORMULA BAR ===== */
+.formula-bar {
+  display: flex;
+  align-items: center;
+  background: var(--cell-white);
+  border-bottom: 2px solid var(--excel-green);
+  flex-shrink: 0;
+}
+.formula-bar .cell-reference {
+  width: 80px;
+  padding: 4px 8px;
+  border-right: 1px solid var(--grid-border);
+  font-size: 10pt;
+  text-align: center;
+  color: var(--text-dark);
+  background: var(--cell-white);
+  flex-shrink: 0;
+}
+.formula-bar .fx-label {
+  padding: 4px 8px;
+  font-style: italic;
+  color: var(--text-muted);
+  border-right: 1px solid var(--grid-border);
+  font-size: 10pt;
+  flex-shrink: 0;
+}
+.formula-bar .input-area {
+  flex: 1;
+  padding: 4px 8px;
+  border: none;
+  font-size: 10pt;
+  font-family: 'Calibri', monospace;
+  outline: none;
+  background: var(--cell-white);
+}
+.formula-bar .input-area:focus { background: var(--cell-active); }
+.formula-bar .input-area::placeholder { color: #bbb; font-style: italic; }
+
+/* ===== SHEET TABS ===== */
+.sheet-tabs {
+  display: flex;
+  background: var(--ribbon-gray);
+  border-bottom: 1px solid var(--grid-border);
+  flex-shrink: 0;
+  align-items: center;
+  padding-left: 40px;
+}
+.sheet-tab {
+  padding: 4px 16px;
+  font-size: 10pt;
+  cursor: default;
+  border-right: 1px solid var(--grid-border);
+  user-select: none;
+}
+.sheet-tab.active {
+  background: var(--cell-white);
+  font-weight: 600;
+  color: var(--excel-green);
+  border-bottom: 2px solid var(--excel-green);
+}
+.sheet-tab.inactive { background: var(--tab-inactive); color: var(--text-muted); }
+
+/* ===== ROOM INFO BAR ===== */
+.room-info {
+  background: var(--excel-green-bg);
+  border-bottom: 1px solid var(--excel-green);
+  padding: 6px 16px;
+  font-size: 9pt;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.room-info .room-code {
+  font-weight: 700;
+  color: var(--excel-green);
+  font-size: 10pt;
+  letter-spacing: 1px;
+}
+.room-info .room-status { color: var(--text-muted); }
+.room-info .turn-indicator { margin-left: auto; font-weight: 600; color: var(--excel-green); }
+.room-info.hidden { display: none; }
+
+/* ===== SCOREBOARD CHIPS (real-time) ===== */
+.scoreboard-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.score-chip {
+  background: white;
+  border: 1px solid var(--excel-green);
+  color: var(--excel-green);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 8.5pt;
+  font-weight: 600;
+}
+.score-chip.eliminated {
+  border: 2px solid #c62828;
+  color: #c62828;
+  background: #fff3f3;
+  box-shadow: none;
+  animation: none;
+}
+.score-chip.leader { background: #fff8e1; border-color: #d4a017; color: #d4a017; }
+
+/* ===== MAIN GRID AREA ===== */
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.grid-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: #fafafa;
+}
+
+.word-grid {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: max-content; /* không kéo dãn full màn hình, chỉ rộng bằng tổng các cột */
+}
+
+.word-grid th,
+.word-grid td {
+  border: 1px solid var(--grid-border);
+  height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 1px 4px;
+  font-size: 10pt;
+  background: var(--cell-white);
+}
+
+/* Header hàng (chữ cột + góc trên trái) — dính khi cuộn */
+.word-grid thead th {
+  background: var(--grid-header);
+  border: 1px solid var(--grid-header-border);
+  font-size: 9pt;
+  font-weight: normal;
+  color: var(--text-dark);
+  text-align: center;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Cột số dòng bên trái — dính khi cuộn ngang */
+.word-grid .row-head {
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  text-align: center;
+  background: var(--grid-header);
+  color: var(--text-muted);
+  font-size: 9pt;
+  user-select: none;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.word-grid thead .row-head { z-index: 3; }
+
+/* 4 cột dữ liệu thật — cố định độ rộng, không chiếm hết màn hình */
+.word-grid .col-a { width: 60px; min-width: 60px; text-align: center; }
+.word-grid .col-b { width: 240px; min-width: 240px; }
+.word-grid .col-c { width: 160px; min-width: 160px; text-align: right; }
+.word-grid .col-d { width: 110px; min-width: 110px; text-align: right; }
+
+/* Các cột trống còn lại — ô vuông Excel thuần, hiện sẵn từ đầu */
+.word-grid .col-empty {
+  width: 100px;
+  min-width: 100px;
+}
+
+.word-grid tbody tr:nth-child(even) td {
+  background: #fbfbfb;
+}
+.word-grid tbody tr:nth-child(even) .row-head {
+  background: var(--grid-header);
+}
+/* ===== STATUS BAR ===== */
+.status-bar {
+  background: var(--status-bar);
+  color: var(--status-text);
+  padding: 3px 16px;
+  font-size: 9pt;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  user-select: none;
+}
+.status-bar .status-left { display: flex; gap: 20px; }
+.status-bar .status-right { margin-left: auto; display: flex; gap: 16px; align-items: center; }
+.status-bar .saving-indicator { display: flex; align-items: center; gap: 6px; }
+.status-bar .saving-bar {
+  width: 100px;
+  height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.status-bar .saving-fill {
+  height: 100%;
+  background: #90ee90;
+  transition: width 0.5s linear;
+  border-radius: 3px;
+}
+
+/* ===== OVERLAY SCREENS ===== */
+.overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+.overlay.hidden { display: none; }
+
+/* ===== GAME LOGIN / ROOM SCREEN ===== */
+.login-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 32px;
+  width: 400px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  border-top: 4px solid var(--excel-green);
+}
+.login-panel h2 { color: var(--excel-green); font-size: 16pt; margin-bottom: 4px; }
+.login-panel .subtitle { color: var(--text-muted); font-size: 9pt; margin-bottom: 20px; }
+.login-panel .form-group { margin-bottom: 14px; }
+.login-panel label { display: block; font-size: 9pt; color: var(--text-muted); margin-bottom: 3px; }
+.login-panel input[type="text"],  input[type="number"], select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--grid-border);
+  border-radius: 2px;
+  font-size: 10pt;
+  font-family: 'Calibri', sans-serif;
+}
+.login-panel input[type="text"]:focus, input[type="number"]:focus, select:focus {
+  border-color: var(--excel-green);
+  outline: none;
+  box-shadow: 0 0 0 1px var(--excel-green);
+}
+.login-panel .btn-row { display: flex; gap: 8px; margin-top: 18px; }
+.login-panel .btn {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 3px;
+  font-size: 10pt;
+  font-family: 'Calibri', sans-serif;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-primary { background: var(--excel-green); color: white; }
+.btn-primary:hover { background: var(--excel-green-light); }
+
+/* ===== BOSS KEY / FAKE DATA (giữ nguyên ribbon/toolbar mini cho fake sheet) ===== */
+.boss-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--cell-white);
+  z-index: 200;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+.boss-overlay.active { display: flex; }
+.boss-overlay .ribbon {
+  background: var(--excel-green);
+  color: white;
+  padding: 4px 16px;
+  font-size: 11pt;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  user-select: none;
+  flex-shrink: 0;
+}
+.boss-overlay .ribbon .file-tab {
+  background: var(--excel-green-light);
+  padding: 4px 14px;
+  border-radius: 3px 3px 0 0;
+  font-weight: 600;
+}
+.boss-overlay .ribbon .menu-item { padding: 4px 10px; cursor: default; font-size: 10pt; }
+.boss-overlay .ribbon .menu-item:hover { background: rgba(255,255,255,0.15); border-radius: 3px; }
+.boss-overlay .ribbon .doc-title { flex: 1; text-align: center; font-size: 10pt; opacity: 0.9; }
+.boss-overlay .toolbar {
+  background: var(--ribbon-gray);
+  border-bottom: 1px solid var(--ribbon-dark);
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.boss-overlay .toolbar .tool-btn {
+  padding: 3px 8px;
+  background: var(--cell-white);
+  border: 1px solid var(--ribbon-dark);
+  border-radius: 2px;
+  cursor: default;
+  font-size: 10pt;
+  color: var(--text-muted);
+}
+.boss-overlay .toolbar .tool-btn:hover { background: var(--ribbon-active); }
+.boss-grid { flex: 1; overflow: auto; padding: 16px; }
+.boss-table { border-collapse: collapse; font-size: 9pt; }
+.boss-table td, .boss-table th {
+  border: 1px solid #d0d0d0;
+  padding: 2px 8px;
+  font-family: 'Calibri', monospace;
+}
+.boss-table th { background: #f0f0f0; text-align: center; font-weight: 600; }
+.boss-table .num-cell { text-align: right; }
+
+.header-cell {
+  font-weight: 700;
+  background: var(--grid-header) !important;
+  color: var(--text-dark);
+}
+
+/* ===== TURN HIGHLIGHT ===== */
+.your-turn .formula-bar {
+  border-bottom-color: var(--cell-active-border);
+  background: var(--excel-green-bg);
+}
+.your-turn .formula-bar .input-area {
+  background: white;
+  border: 2px solid var(--cell-active-border);
+  margin: 1px;
+  border-radius: 2px;
+}
+
+/* ===== NOTIFICATION TOAST ===== */
+.toast {
+  position: fixed;
+  top: 60px;
+  left: 20px;
+  background: var(--text-dark);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 10pt;
+  z-index: 150;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.3s;
+  max-width: 300px;
+}
+.toast.show { opacity: 1; transform: translateX(0); }
+.toast.error { background: var(--boss-red); }
+.toast.success { background: var(--excel-green); }
+
+/* ===== WINNER OVERLAY ===== */
+.winner-overlay { background: rgba(0,0,0,0.6); }
+.winner-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  border-top: 4px solid var(--excel-green);
+}
+.winner-panel h2 { color: var(--excel-green); font-size: 18pt; margin-bottom: 8px; }
+.winner-panel .winner-name { font-size: 24pt; font-weight: 700; color: var(--excel-green); margin: 12px 0; }
+.winner-panel .btn { display: inline-block; margin-top: 16px; min-width: 150px; flex: none; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .login-panel { width: 95vw; padding: 20px; }
+  .formula-bar .cell-reference { width: 50px; }
+}
+
+/* ===== READY OVERLAY ===== */
+.ready-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 120;
+}
+.ready-box {
+  background: white;
+  border-radius: 8px;
+  padding: 32px 40px;
+  width: 420px;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border-top: 4px solid var(--excel-green);
+  animation: readySlideIn 0.3s ease;
+}
+@keyframes readySlideIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ready-box h2 { color: var(--excel-green); font-size: 16pt; margin-bottom: 16px; }
+.ready-box .leaderboard { margin: 16px 0; }
+.ready-box .leaderboard h3 {
+  font-size: 10pt; color: var(--text-muted); margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.ready-box .leaderboard table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+.ready-box .leaderboard td { padding: 6px 10px; border-bottom: 1px solid var(--grid-header-border); text-align: left; }
+.ready-box .leaderboard td:first-child { width: 30px; text-align: center; color: var(--text-muted); font-weight: 600; }
+.ready-box .leaderboard td:nth-child(2) { font-weight: 600; color: var(--text-dark); }
+.ready-box .leaderboard td:last-child { text-align: right; color: var(--excel-green); font-weight: 700; }
+.ready-box .leaderboard tr:first-child td { color: #d4a017; font-size: 11pt; }
+.ready-box .leaderboard tr:first-child td:first-child::after { content: ' 👑'; }
+.ready-status { margin: 16px 0; font-size: 10pt; color: var(--text-muted); font-weight: 600; }
+.btn-ready, .btn-not-ready {
+  display: inline-block;
+  padding: 10px 32px;
+  border: none;
+  border-radius: 4px;
+  font-size: 11pt;
+  font-family: 'Calibri', 'Segoe UI', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 140px;
+}
+.btn-ready { background: var(--excel-green); color: white; }
+.btn-ready:hover { background: var(--excel-green-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(33, 115, 70, 0.3); }
+.btn-not-ready { background: #f44336; color: white; }
+.btn-not-ready:hover { background: #d32f2f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3); }
+
+@media (max-width: 768px) {
+  .ready-box { width: 95vw; padding: 24px 20px; }
+}
+
+/* ===== BLITZ LEADERBOARD OVERLAY ===== */
+.blitz-leaderboard-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 110;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.blitz-leaderboard-box {
+  background: white;
+  border-radius: 8px;
+  padding: 28px 36px;
+  width: 380px;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border-top: 4px solid var(--excel-green);
+  animation: slideDown 0.3s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.blitz-leaderboard-box h2 { color: var(--excel-green); font-size: 14pt; margin-bottom: 16px; }
+.blitz-leaderboard-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+.blitz-leaderboard-table th {
+  background: var(--excel-green-bg);
+  color: var(--excel-green);
+  padding: 6px 10px;
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 2px solid var(--excel-green);
+}
+.blitz-leaderboard-table td { padding: 8px 10px; border-bottom: 1px solid var(--grid-header-border); }
+.blitz-leaderboard-table .rank { width: 40px; text-align: center; font-weight: 700; color: var(--text-muted); }
+.blitz-leaderboard-table .player-name { text-align: left; font-weight: 600; color: var(--text-dark); }
+.blitz-leaderboard-table .player-score { text-align: right; font-weight: 700; color: var(--excel-green); font-size: 11pt; }
+.blitz-leaderboard-table tr.first-place .rank { color: #d4a017; font-size: 12pt; }
+.blitz-leaderboard-table tr.first-place .rank::after { content: ' 👑'; }
+.blitz-leaderboard-table tr.first-place .player-name { color: #d4a017; }
+.blitz-leaderboard-table tr.first-place .player-score { color: #d4a017; font-size: 13pt; }
+.next-round-hint { margin-top: 16px; font-size: 9pt; color: var(--text-muted); font-style: italic; }
+
+/* ===== WRONG FLASH BANNER (chỉ Classic) ===== */
+.wrong-flash-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(211, 47, 47, 0.95);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 11pt;
+  z-index: 180;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  animation: fadeIn 0.15s ease;
+}
+
+/* ===== SCOREBOARD CHIPS + WRONG FLASH INLINE ===== */
+.scoreboard-chips { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+.score-chip-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.score-chip {
+  background: white;
+  border: 1px solid var(--excel-green);
+  color: var(--excel-green);
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: 10.5pt;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.score-chip.leader { background: #fff8e1; border-color: #d4a017; color: #d4a017; }
+.score-chip.current-turn {
+  background: var(--excel-green);
+  color: white;
+  border-color: var(--excel-green-border);
+  box-shadow: 0 0 0 2px rgba(33, 115, 70, 0.25);
+  animation: pulseTurn 1s ease infinite alternate;
+}
+@keyframes pulseTurn {
+  from { box-shadow: 0 0 0 2px rgba(33, 115, 70, 0.25); }
+  to { box-shadow: 0 0 0 5px rgba(33, 115, 70, 0.04); }
+}
+
+.wrong-flash-inline {
+  background: #fff3f3;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-size: 8.5pt;
+  font-weight: 600;
+  white-space: nowrap;
+  animation: popIn 0.15s ease;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateX(-4px) scale(0.9); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* ===== CHAT / "COMMENTS" PANE (bên trái) ===== */
+.chat-anchor {
+  position: fixed;
+  bottom: 40px;
+  left: 16px;
+  z-index: 140;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* neo bên trái, panel mở rộng sang phải */
+  gap: 8px;
+}
+
+.chat-preview-bubble {
+  background: white;
+  border: 1px solid var(--excel-green);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 8.5pt;
+  color: var(--text-dark);
+  max-width: 240px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  animation: fadeIn 0.2s ease;
+}
+.chat-preview-bubble b { color: var(--excel-green); }
+
+.chat-toggle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--excel-green);
+  color: white;
+  border: none;
+  font-size: 18pt;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  position: relative;
+  flex-shrink: 0;
+}
+.chat-toggle:hover { background: var(--excel-green-light); }
+.chat-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #f44336;
+  color: white;
+  border-radius: 50%;
+  padding: 1px 6px;
+  font-size: 7.5pt;
+  min-width: 16px;
+  text-align: center;
+}
+
+.chat-panel {
+  width: 280px;
+  height: 0;
+  overflow: hidden;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  border-top: 0 solid var(--excel-green); /* không có viền khi thu nhỏ -> hết "đường xanh" */
+  display: flex;
+  flex-direction: column;
+  transition: height 0.25s ease, border-top-width 0.15s ease;
+}
+.chat-panel.open {
+  height: 360px;
+  border-top-width: 3px; /* chỉ hiện viền khi đã mở */
+}
+
+.chat-header {
+  background: var(--excel-green-bg);
+  color: var(--excel-green);
+  padding: 8px 12px;
+  font-size: 9.5pt;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: move;
+  user-select: none;
+}
+.chat-close { cursor: pointer; }
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+.chat-msg { display: flex; }
+.chat-msg.own { justify-content: flex-end; }
+.chat-msg:not(.own) { justify-content: flex-start; }
+.chat-bubble {
+  max-width: 80%;
+  padding: 6px 11px;
+  border-radius: 14px;
+  font-size: 9.5pt;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.chat-msg:not(.own) .chat-bubble {
+  background: #eef1f0;
+  color: var(--text-dark);
+  border-bottom-left-radius: 3px;
+}
+.chat-msg.own .chat-bubble {
+  background: var(--excel-green);
+  color: white;
+  border-bottom-right-radius: 3px;
+}
+.chat-name {
+  display: block;
+  font-size: 7.5pt;
+  font-weight: 700;
+  color: var(--excel-green);
+  margin-bottom: 2px;
+}
+.chat-empty { color: #bbb; font-style: italic; font-size: 9pt; text-align: center; margin-top: 20px; }
+.chat-input-row { display: flex; border-top: 1px solid var(--grid-header-border); flex-shrink: 0; }
+.chat-input-row input { flex: 1; border: none; padding: 8px 10px; font-size: 9pt; outline: none; }
+.chat-input-row button { border: none; background: var(--excel-green); color: white; padding: 0 14px; cursor: pointer; font-size: 10pt; }
+
+/* ===== ELIMINATION BANNER (góc dưới trái) ===== */
+.elimination-banner {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  background: white;
+  border-left: 4px solid #c62828;
+  color: var(--text-dark);
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 9.5pt;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  max-width: 320px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 160;
+  
+  animation: fadeIn 0.2s ease;
+}
+
+.login-wrapper {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  max-width: 90vw;
+}
+.room-list-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  width: 300px;
+  max-width: 90vw;
+  max-height: 480px;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  border-top: 4px solid var(--excel-green);
+}
+.room-list-panel h3 { color: var(--excel-green); font-size: 12pt; margin-bottom: 12px; }
+.room-list { display: flex; flex-direction: column; gap: 8px; }
+.room-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--grid-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 9pt;
+}
+.room-list-info { display: flex; flex-direction: column; gap: 2px; }
+.room-list-code { font-weight: 700; color: var(--excel-green); letter-spacing: 0.5px; }
+.room-list-mode { color: var(--text-muted); font-size: 8pt; }
+.room-list-status { font-size: 8pt; color: #d4a017; font-weight: 600; }
+.room-list-status.playing { color: #217346; }
+.room-list-count { font-size: 8pt; color: var(--text-muted); }
+.btn-join-mini {
+  background: var(--excel-green);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 9pt;
+  cursor: pointer;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.btn-join-mini:hover { background: var(--excel-green-light); }
+.btn-join-mini:disabled { background: #bbb; cursor: not-allowed; }
+.room-list-empty { color: #999; font-size: 9pt; font-style: italic; text-align: center; padding: 20px 0; }
+
+@media (max-width: 768px) {
+  .login-wrapper { flex-direction: column; align-items: center; }
+  .room-list-panel { width: 95vw; }
+}
+
+.winner-panel .btn-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.btn-secondary {
+  background: #888;
+  color: white;
+}
+.btn-secondary:hover { background: #666; }
+
+.sample-answer {
+  margin: 6px 0 10px;
+  font-size: 10pt;
+  color: var(--text-dark);
+}
+.sample-answer b { color: var(--excel-green); }
